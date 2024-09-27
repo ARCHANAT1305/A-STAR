@@ -1,6 +1,6 @@
 <h1>ExpNo 4 : Implement A* search algorithm for a Graph</h1> 
-<h3>Name:       </h3>
-<h3>Register Number:           </h3>
+<h3>Name: ARCHANA T       </h3>
+<h3>Register Number: 212223240013          </h3>
 <H3>Aim:</H3>
 <p>To ImplementA * Search algorithm for a Graph using Python 3.</p>
 <H3>Algorithm:</H3>
@@ -50,6 +50,111 @@
 
 ``````
 
+
+
+<h3>PROGRAM:</h3>
+
+```    
+
+ import heapq  # For the priority queue
+
+class Node:
+    def __init__(self, position, parent=None):
+        self.position = position  # (x, y) tuple
+        self.parent = parent
+        self.g = 0  # Cost from start to node
+        self.h = 0  # Heuristic cost to goal
+        self.f = 0  # Total cost
+
+    def __lt__(self, other):
+        return self.f < other.f
+
+def manhattan_heuristic(node, goal):
+    return abs(node.position[0] - goal.position[0]) + abs(node.position[1] - goal.position[1])
+
+def euclidean_heuristic(node, goal):
+    return ((node.position[0] - goal.position[0]) ** 2 + (node.position[1] - goal.position[1]) ** 2) ** 0.5
+
+def diagonal_heuristic(node, goal):
+    dx = abs(node.position[0] - goal.position[0])
+    dy = abs(node.position[1] - goal.position[1])
+    return max(dx, dy)
+
+def a_star_search(start, goal, grid):
+    open_list = []
+    closed_list = []
+
+    heapq.heappush(open_list, start)
+
+    while open_list:
+        # Step a: find the node with the least f
+        current_node = heapq.heappop(open_list)
+        
+        # Step b: pop q off the open list
+        closed_list.append(current_node)
+
+        # Step c: generate successors
+        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]:  # Adjacent squares (up, down, left, right)
+            node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
+
+            # Check if within grid bounds
+            if node_position[0] > (len(grid) - 1) or node_position[0] < 0 or node_position[1] > (len(grid[len(grid)-1]) - 1) or node_position[1] < 0:
+                continue
+            
+            # Check if the node is walkable
+            if grid[node_position[0]][node_position[1]] != 0:
+                continue
+
+            # Create new node
+            successor = Node(node_position, current_node)
+
+            # Step i: if successor is the goal, stop search
+            if successor.position == goal.position:
+                path = []
+                while successor:
+                    path.append(successor.position)
+                    successor = successor.parent
+                return path[::-1]  # Return reversed path
+
+            # Step ii: compute g, h, and f
+            successor.g = current_node.g + 1  # Cost is assumed to be 1 for this example
+            successor.h = manhattan_heuristic(successor, goal)  # Change to desired heuristic
+            successor.f = successor.g + successor.h
+
+            # Step iii: if a node with the same position is in the open list with a lower f, skip this successor
+            if any(open_node.position == successor.position and open_node.f <= successor.f for open_node in open_list):
+                continue
+
+            # Step iv: if a node with the same position is in the closed list with a lower f, skip this successor
+            if any(closed_node.position == successor.position and closed_node.f <= successor.f for closed_node in closed_list):
+                continue
+
+            # Add successor to open list
+            heapq.heappush(open_list, successor)
+
+    return []  # Return empty path if no path is found
+
+# Example usage:
+if __name__ == "__main__":
+    grid = [
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 0, 0, 0, 0],
+    ]
+
+    start_node = Node((0, 0))
+    goal_node = Node((4, 4))
+
+    path = a_star_search(start_node, goal_node, grid)
+    print("Path found:", path)
+
+
+
+```
+
+            
 <hr>
 <h2>Sample Graph I</h2>
 <hr>
