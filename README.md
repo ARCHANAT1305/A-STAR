@@ -54,86 +54,111 @@
 
 <h3>PROGRAM:</h3>
 
-```    
+```   
 
- import heapq  # For the priority queue
+ 
+#!/usr/bin/env python
+# coding: utf-8
 
-class Node:
-    def __init__(self, position, parent=None):
-        self.position = position  # (x, y) tuple
-        self.parent = parent
-        self.g = 0  # Cost from start to node
-        self.h = 0  # Heuristic cost to goal
-        self.f = 0  # Total cost
+from collections import defaultdict
 
-    def __lt__(self, other):
-        return self.f < other.f
+H_dist = {}
 
-def manhattan_heuristic(node, goal):
-    return abs(node.position[0] - goal.position[0]) + abs(node.position[1] - goal.position[1])
+def aStarAlgo(start_node, stop_node):
+    open_set = set([start_node])  # Use a set with start_node
+    closed_set = set()
+    g = {}  # store distance from starting node
+    parents = {}  # parents contains an adjacency map of all nodes
 
-def euclidean_heuristic(node, goal):
-    return ((node.position[0] - goal.position[0]) ** 2 + (node.position[1] - goal.position[1]) ** 2) ** 0.5
+    # Distance of starting node from itself is zero
+    g[start_node] = 0
+    # Start node is root node; it has no parent nodes
+    # So start_node is set to its own parent node
+    parents[start_node] = start_node
 
-def diagonal_heuristic(node, goal):
-    dx = abs(node.position[0] - goal.position[0])
-    dy = abs(node.position[1] - goal.position[1])
-    return max(dx, dy)
+    while len(open_set) > 0:
+        n = None
+        # Node with the lowest f() is found
+        for v in open_set:
+            if n is None or g[v] + heuristic(v) < g[n] + heuristic(n):
+                n = v
 
-def a_star_search(start, goal, grid):
-    open_list = []
-    closed_list = []
-
-    heapq.heappush(open_list, start)
-
-    while open_list:
-        # Step a: find the node with the least f
-        current_node = heapq.heappop(open_list)
+        if n is None:  # If no node found, path does not exist
+            print('Path does not exist!')
+            return None
         
-        # Step b: pop q off the open list
-        closed_list.append(current_node)
+        if n == stop_node:
+            # If the current node is the stop_node,
+            # then we begin reconstructing the path from it to the start_node
+            path = []
+            while parents[n] != n:
+                path.append(n)
+                n = parents[n]
+            path.append(start_node)
+            path.reverse()
+            print('Path found: {}'.format(path))
+            return path
 
-        # Step c: generate successors
-        for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]:  # Adjacent squares (up, down, left, right)
-            node_position = (current_node.position[0] + new_position[0], current_node.position[1] + new_position[1])
+        # Remove n from the open_list and add it to closed_list
+        # because all of its neighbors were inspected
+        open_set.remove(n)
+        closed_set.add(n)
 
-            # Check if within grid bounds
-            if node_position[0] > (len(grid) - 1) or node_position[0] < 0 or node_position[1] > (len(grid[len(grid)-1]) - 1) or node_position[1] < 0:
-                continue
-            
-            # Check if the node is walkable
-            if grid[node_position[0]][node_position[1]] != 0:
-                continue
+        for (m, weight) in get_neighbors(n):
+            # Nodes 'm' not in first and last set are added to first
+            # n is set its parent
+            if m not in open_set and m not in closed_set:
+                open_set.add(m)
+                parents[m] = n
+                g[m] = g[n] + weight
+            else:
+                if g[m] > g[n] + weight:
+                    # Update g(m)
+                    g[m] = g[n] + weight
+                    # Change parent of m to n
+                    parents[m] = n
+                    # If m in closed set, remove and add to open
+                    if m in closed_set:
+                        closed_set.remove(m)
+                        open_set.add(m)
 
-            # Create new node
-            successor = Node(node_position, current_node)
+    print('Path does not exist!')
+    return None
 
-            # Step i: if successor is the goal, stop search
-            if successor.position == goal.position:
-                path = []
-                while successor:
-                    path.append(successor.position)
-                    successor = successor.parent
-                return path[::-1]  # Return reversed path
+# Define function to return neighbor and its distance from the passed node
+def get_neighbors(v):
+    return graph[v] if v in graph else []  # Return empty list if node has no neighbors
 
-            # Step ii: compute g, h, and f
-            successor.g = current_node.g + 1  # Cost is assumed to be 1 for this example
-            successor.h = manhattan_heuristic(successor, goal)  # Change to desired heuristic
-            successor.f = successor.g + successor.h
+def heuristic(n):
+    return H_dist[n] if n in H_dist else float('inf')  # Return heuristic value or inf if not found
 
-            # Step iii: if a node with the same position is in the open list with a lower f, skip this successor
-            if any(open_node.position == successor.position and open_node.f <= successor.f for open_node in open_list):
-                continue
+# Describe your graph here
+graph = defaultdict(list)
+n, e = map(int, input("Enter number of nodes and edges: ").split())
+for i in range(e):
+    u, v, cost = map(str, input("Enter edge (u v cost): ").split())
+    t = (v, float(cost))
+    graph[u].append(t)
+    t1 = (u, float(cost))
+    graph[v].append(t1)
 
-            # Step iv: if a node with the same position is in the closed list with a lower f, skip this successor
-            if any(closed_node.position == successor.position and closed_node.f <= successor.f for closed_node in closed_list):
-                continue
+for i in range(n):
+    node, h = map(str, input("Enter node and heuristic value: ").split())
+    H_dist[node] = float(h)
 
-            # Add successor to open list
-            heapq.heappush(open_list, successor)
+print("Heuristic Distances:", H_dist)
+print("Graph Structure:", dict(graph))
 
-    return []  # Return empty path if no path is found
+# Run the A* algorithm
+start = input("Enter start node: ")
+goal = input("Enter goal node: ")
+aStarAlgo(start, goal)
+ 
+```
 
+
+
+  
 # Example usage:
 if __name__ == "__main__":
     grid = [
@@ -152,7 +177,6 @@ if __name__ == "__main__":
 
 
 
-```
 
             
 <hr>
@@ -222,3 +246,7 @@ G 0 <br>
 <h2>Sample Output</h2>
 <hr>
 Path found: ['A', 'E', 'D', 'G']
+
+
+### RESULT:
+Hence, A * search algorithm is executed successfully.
